@@ -26,13 +26,17 @@
       z-index: 9999;
     }
 
-    #modeBtns {
+    #modeBtns, #haloBtns {
       position: fixed;
       top: 20px;
       right: 20px;
       display: flex;
       gap: 10px;
       z-index: 9999;
+    }
+
+    #haloBtns {
+      top: 70px;
     }
 
     .modeBtn {
@@ -57,11 +61,20 @@
   <div class="modeBtn" onclick="setGrid(64)">64</div>
 </div>
 
+<!-- ハロー強さ切り替え -->
+<div id="haloBtns">
+  <div class="modeBtn" onclick="setHalo('soft')">Soft</div>
+  <div class="modeBtn" onclick="setHalo('medium')">Medium</div>
+  <div class="modeBtn" onclick="setHalo('strong')">Strong</div>
+</div>
+
 <!-- 撮影ボタン -->
 <div id="captureBtn">📸</div>
 
 <script>
-let grid = 32; // ★ 初期値は 32
+let grid = 32;
+let haloStrength = "medium";
+
 const video = document.getElementById("cam");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
@@ -69,7 +82,6 @@ const ctx = canvas.getContext("2d");
 let videoW = 640;
 let videoH = 480;
 
-// ぼやけた境界用の縮小キャンバス（動的に作り直す）
 let small = document.createElement("canvas");
 let sctx = small.getContext("2d");
 
@@ -78,6 +90,10 @@ function setGrid(n) {
   small.width = grid;
   small.height = grid;
   sctx = small.getContext("2d");
+}
+
+function setHalo(level) {
+  haloStrength = level;
 }
 
 async function startCam() {
@@ -108,7 +124,6 @@ function draw() {
 
   if (video.readyState < 2) return;
 
-  // ★ カメラ映像のアスペクト比を保持して縮小
   const camRatio = videoW / videoH;
   const gridRatio = 1;
 
@@ -130,7 +145,6 @@ function draw() {
 
   const img = sctx.getImageData(0, 0, grid, grid).data;
 
-  // ★ 正方形ピクセル
   const cell = Math.min(canvas.width / grid, canvas.height / grid);
   const px = (canvas.width - cell * grid) / 2;
   const py = (canvas.height - cell * grid) / 2;
@@ -140,13 +154,14 @@ function draw() {
   for (let y = 0; y < grid; y++) {
     for (let x = 0; x < grid; x++) {
 
-      // 元の色
       let r = img[i++];
       let g = img[i++];
       let b = img[i++];
       i++;
 
-      // ★ 周囲の色と混ぜる（にじみ）
+      const brightness = (r + g + b) / 3;
+
+      // にじみ
       const mix = 0.25;
       const neighbors = [];
 
@@ -170,25 +185,36 @@ function draw() {
       g = g * (1 - mix) + ng * mix;
       b = b * (1 - mix) + nb * mix;
 
-      // ★ ピクセル位置の揺らぎ
+      // 揺らぎ
       const jitter = cell * 0.15;
       const jx = (Math.random() - 0.5) * jitter;
       const jy = (Math.random() - 0.5) * jitter;
 
-      // ★ 角丸ピクセル
       const xPos = px + x * cell + jx;
       const yPos = py + y * cell + jy;
 
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      // ★ ハロー（光の滲み）
+      let blur = 0;
 
+      if (haloStrength === "soft") blur = cell * 0.4;
+      if (haloStrength === "medium") blur = cell * 0.8;
+      if (haloStrength === "strong") blur = cell * 1.4;
+
+      ctx.shadowColor = `rgba(${r},${g},${b},0.6)`;
+      ctx.shadowBlur = blur;
+
+      // ピクセル本体
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.beginPath();
       ctx.roundRect(xPos, yPos, cell, cell, cell * 0.3);
       ctx.fill();
+
+      ctx.shadowBlur = 0;
     }
   }
 }
 
-// ★ 撮影ボタン（年月日時分秒つき）
+// 撮影ボタン（年月日時分秒つき）
 document.getElementById("captureBtn").onclick = () => {
   const now = new Date();
   const fileName =
