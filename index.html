@@ -1,34 +1,24 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixLens 24x24 Camera</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; background: #000; }
-  </style>
 </head>
 <body>
-
 <script>
 let capture;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  // ▼ 最も安全なカメラ起動
-  capture = createCapture({
-    video: { facingMode: { ideal: "environment" } }
-  });
+  // ▼ Android Chrome で最も安定する書き方
+  capture = createCapture(VIDEO);
   capture.hide();
 }
 
 function draw() {
   background(0);
-
-  // ▼ デバッグ用：カメラが映っているか確認
-  // image(capture, 0, 0, 200, 150);
 
   const grid = 24;
   const cellW = width / grid;
@@ -40,20 +30,15 @@ function draw() {
   for (let y = 0; y < grid; y++) {
     for (let x = 0; x < grid; x++) {
       const i = (y * grid + x) * 4;
-      const r = capture.pixels[i];
-      const g = capture.pixels[i + 1];
-      const b = capture.pixels[i + 2];
-
-      fill(r, g, b);
+      fill(
+        capture.pixels[i],
+        capture.pixels[i+1],
+        capture.pixels[i+2]
+      );
       rect(x * cellW, y * cellH, cellW, cellH);
     }
   }
 }
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-}
 </script>
-
 </body>
 </html>
