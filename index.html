@@ -8,44 +8,29 @@
     body { margin: 0; background: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- UI 共通スタイル（ガラス風） --- */
-    .glass {
-      backdrop-filter: blur(8px);
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 12px;
-      padding: 6px 12px;
-      color: #fff;
-      font-size: 14px;
+    /* シンプルな白ボタン */
+    .btn {
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
       user-select: none;
-      transition: background 0.2s;
-    }
-    .glass:hover {
-      background: rgba(255, 255, 255, 0.25);
     }
 
-    /* --- ピクセル数切り替えボタン --- */
-    #modeBtns {
+    #modeBtns, #colorBtns {
       position: fixed;
       top: 20px;
       right: 20px;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       z-index: 9999;
     }
 
-    /* --- 色数制限切り替えボタン --- */
     #colorBtns {
-      position: fixed;
       top: 70px;
-      right: 20px;
-      display: flex;
-      gap: 8px;
-      z-index: 9999;
     }
 
-    /* --- 撮影ボタン（ガラス風＋丸） --- */
     #captureBtn {
       position: fixed;
       bottom: 20px;
@@ -53,9 +38,8 @@
       width: 70px;
       height: 70px;
       border-radius: 50%;
-      backdrop-filter: blur(10px);
-      background: rgba(255,255,255,0.25);
-      border: 2px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.85);
+      border: 3px solid #fff;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -63,10 +47,6 @@
       cursor: pointer;
       user-select: none;
       z-index: 9999;
-      transition: background 0.2s;
-    }
-    #captureBtn:hover {
-      background: rgba(255,255,255,0.35);
     }
   </style>
 </head>
@@ -77,16 +57,16 @@
 
 <!-- ピクセル数切り替え -->
 <div id="modeBtns">
-  <div class="glass" onclick="setGrid(32)">32</div>
-  <div class="glass" onclick="setGrid(48)">48</div>
-  <div class="glass" onclick="setGrid(64)">64</div>
+  <div class="btn" onclick="setGrid(32)">32</div>
+  <div class="btn" onclick="setGrid(48)">48</div>
+  <div class="btn" onclick="setGrid(64)">64</div>
 </div>
 
 <!-- 色数制限切り替え -->
 <div id="colorBtns">
-  <div class="glass" onclick="setPalette('normal')">Normal</div>
-  <div class="glass" onclick="setPalette('pico8')">PICO‑8</div>
-  <div class="glass" onclick="setPalette('gb')">GB</div>
+  <div class="btn" onclick="setPalette('normal')">Normal</div>
+  <div class="btn" onclick="setPalette('pico8')">PICO‑8</div>
+  <div class="btn" onclick="setPalette('gb')">GB</div>
 </div>
 
 <!-- 撮影ボタン -->
