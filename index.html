@@ -25,28 +25,60 @@
       user-select: none;
       z-index: 9999;
     }
+
+    #modeBtns {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 9999;
+    }
+
+    .modeBtn {
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
 
 <video id="cam" autoplay playsinline style="display:none;"></video>
 <canvas id="view"></canvas>
+
+<!-- ピクセル数切り替え -->
+<div id="modeBtns">
+  <div class="modeBtn" onclick="setGrid(32)">32</div>
+  <div class="modeBtn" onclick="setGrid(48)">48</div>
+  <div class="modeBtn" onclick="setGrid(64)">64</div>
+</div>
+
+<!-- 撮影ボタン -->
 <div id="captureBtn">📸</div>
 
 <script>
-const grid = 32;
+let grid = 32; // ★ 初期値は 32
 const video = document.getElementById("cam");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
 
-// 32×32 の縮小用キャンバス
-const small = document.createElement("canvas");
-small.width = grid;
-small.height = grid;
-const sctx = small.getContext("2d");
-
 let videoW = 640;
 let videoH = 480;
+
+// ぼやけた境界用の縮小キャンバス（動的に作り直す）
+let small = document.createElement("canvas");
+let sctx = small.getContext("2d");
+
+function setGrid(n) {
+  grid = n;
+  small.width = grid;
+  small.height = grid;
+  sctx = small.getContext("2d");
+}
 
 async function startCam() {
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -76,7 +108,7 @@ function draw() {
 
   if (video.readyState < 2) return;
 
-  // ★ カメラ映像のアスペクト比を保持して 32×32 に縮小
+  // ★ カメラ映像のアスペクト比を保持して縮小
   const camRatio = videoW / videoH;
   const gridRatio = 1;
 
@@ -114,7 +146,7 @@ function draw() {
       let b = img[i++];
       i++;
 
-      // ★ 周囲の色と少し混ぜる（にじみ）
+      // ★ 周囲の色と混ぜる（にじみ）
       const mix = 0.25;
       const neighbors = [];
 
@@ -156,7 +188,7 @@ function draw() {
   }
 }
 
-// ★ 撮影ボタン（年月日時分秒つきファイル名）
+// ★ 撮影ボタン（年月日時分秒つき）
 document.getElementById("captureBtn").onclick = () => {
   const now = new Date();
   const fileName =
