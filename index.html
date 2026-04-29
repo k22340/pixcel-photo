@@ -39,10 +39,14 @@ const video = document.getElementById("cam");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
 
+// 32×32 の縮小用キャンバス
 const small = document.createElement("canvas");
 small.width = grid;
 small.height = grid;
 const sctx = small.getContext("2d");
+
+let videoW = 640;
+let videoH = 480;
 
 async function startCam() {
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -53,7 +57,14 @@ async function startCam() {
     },
     audio: false
   });
+
   video.srcObject = stream;
+
+  // カメラの実際の解像度を取得
+  video.onloadedmetadata = () => {
+    videoW = video.videoWidth;
+    videoH = video.videoHeight;
+  };
 }
 
 function resize() {
@@ -66,16 +77,35 @@ function draw() {
 
   if (video.readyState < 2) return;
 
-  // 32×32 に縮小
-  sctx.drawImage(video, 0, 0, grid, grid);
+  // ★ カメラ映像のアスペクト比を保持して 32×32 に縮小
+  const camRatio = videoW / videoH;
+  const gridRatio = 1; // 32×32 は正方形
+
+  let drawW, drawH;
+
+  if (camRatio > gridRatio) {
+    // カメラが横長 → 横を合わせる
+    drawW = grid;
+    drawH = grid / camRatio;
+  } else {
+    // カメラが縦長 → 縦を合わせる
+    drawH = grid;
+    drawW = grid * camRatio;
+  }
+
+  const offsetX = (grid - drawW) / 2;
+  const offsetY = (grid - drawH) / 2;
+
+  // 32×32 の中にアスペクト比を保って描画
+  sctx.clearRect(0, 0, grid, grid);
+  sctx.drawImage(video, offsetX, offsetY, drawW, drawH);
+
   const img = sctx.getImageData(0, 0, grid, grid).data;
 
-  // ★ 正方形ピクセルのためのセルサイズ
+  // ★ 正方形ピクセル
   const cell = Math.min(canvas.width / grid, canvas.height / grid);
-
-  // ★ 中央に配置するためのオフセット
-  const offsetX = (canvas.width - cell * grid) / 2;
-  const offsetY = (canvas.height - cell * grid) / 2;
+  const px = (canvas.width - cell * grid) / 2;
+  const py = (canvas.height - cell * grid) / 2;
 
   let i = 0;
   for (let y = 0; y < grid; y++) {
@@ -86,12 +116,7 @@ function draw() {
       i++;
 
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(
-        offsetX + x * cell,
-        offsetY + y * cell,
-        cell,
-        cell
-      );
+      ctx.fillRect(px + x * cell, py + y * cell, cell, cell);
     }
   }
 }
