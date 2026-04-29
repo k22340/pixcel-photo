@@ -3,15 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixLens 24x24 Camera (Ultra Light)</title>
+  <title>PixLens 24x24 Camera</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-    }
+    body { margin: 0; overflow: hidden; background: #000; }
   </style>
 </head>
 <body>
@@ -22,29 +17,28 @@ let capture;
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  // 最も互換性の高いカメラ指定
+  // ▼ 最も安全なカメラ起動
   capture = createCapture({
-    video: { facingMode: "environment" }
+    video: { facingMode: { ideal: "environment" } }
   });
-
   capture.hide();
-  noStroke();
 }
 
 function draw() {
   background(0);
 
+  // ▼ デバッグ用：カメラが映っているか確認
+  // image(capture, 0, 0, 200, 150);
+
   const grid = 24;
   const cellW = width / grid;
   const cellH = height / grid;
 
-  // カメラ映像を 24×24 に縮小
   capture.size(grid, grid);
   capture.loadPixels();
 
   for (let y = 0; y < grid; y++) {
     for (let x = 0; x < grid; x++) {
-
       const i = (y * grid + x) * 4;
       const r = capture.pixels[i];
       const g = capture.pixels[i + 1];
