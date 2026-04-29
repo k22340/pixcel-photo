@@ -12,7 +12,7 @@
       padding: 8px 14px;
       background: rgba(255,255,255,0.85);
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
       user-select: none;
     }
@@ -22,10 +22,10 @@
       top: 20px;
       right: 20px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 9999;
       flex-wrap: wrap;
-      width: 200px;
+      width: 260px;
     }
 
     #colorBtns {
@@ -71,6 +71,12 @@
   <div class="btn" onclick="setPalette('nes')">NES</div>
   <div class="btn" onclick="setPalette('c64')">C64</div>
   <div class="btn" onclick="setPalette('msx')">MSX</div>
+  <div class="btn" onclick="setPalette('hardBW')">HardBW</div>
+  <div class="btn" onclick="setPalette('softBW')">SoftBW</div>
+  <div class="btn" onclick="setPalette('filmBW')">FilmBW</div>
+  <div class="btn" onclick="setPalette('silverBW')">Silver</div>
+  <div class="btn" onclick="setPalette('sepia')">Sepia</div>
+  <div class="btn" onclick="setPalette('grainBW')">GrainBW</div>
 </div>
 
 <!-- 撮影ボタン -->
@@ -174,6 +180,48 @@ const msx = [
   [201,91,186],[204,204,204]
 ];
 
+// コントラスト強め
+const hardBW = [
+  [0, 0, 0],
+  [128, 128, 128],
+  [255, 255, 255]
+];
+
+// 柔らかめ
+const softBW = [
+  [40, 40, 40],
+  [120, 120, 120],
+  [200, 200, 200]
+];
+
+// フィルム写真風（少し黄味）
+const filmBW = [
+  [20, 18, 12],
+  [110, 100, 80],
+  [220, 210, 180]
+];
+
+// 銀塩写真風（青みのある白黒）
+const silverBW = [
+  [10, 15, 25],
+  [90, 105, 130],
+  [200, 210, 230]
+];
+
+// セピア（茶色系の古写真）
+const sepia = [
+  [30, 20, 10],
+  [120, 90, 60],
+  [210, 180, 140]
+];
+
+// 高感度フィルム風（粒子強調用のベース）
+const grainBW = [
+  [0, 0, 0],
+  [120, 120, 120],
+  [240, 240, 240]
+];
+
 function nearestColor(r, g, b, palette) {
   let best = 0;
   let bestDist = 999999;
@@ -230,14 +278,31 @@ function draw() {
       i++;
 
       // 色数制限
-      if (paletteMode === "pico8") [r, g, b] = nearestColor(r, g, b, pico8);
-      if (paletteMode === "gb")    [r, g, b] = nearestColor(r, g, b, gb);
-      if (paletteMode === "nes")   [r, g, b] = nearestColor(r, g, b, nes);
-      if (paletteMode === "c64")   [r, g, b] = nearestColor(r, g, b, c64);
-      if (paletteMode === "msx")   [r, g, b] = nearestColor(r, g, b, msx);
+      if (paletteMode === "pico8")   [r, g, b] = nearestColor(r, g, b, pico8);
+      if (paletteMode === "gb")      [r, g, b] = nearestColor(r, g, b, gb);
+      if (paletteMode === "nes")     [r, g, b] = nearestColor(r, g, b, nes);
+      if (paletteMode === "c64")     [r, g, b] = nearestColor(r, g, b, c64);
+      if (paletteMode === "msx")     [r, g, b] = nearestColor(r, g, b, msx);
+      if (paletteMode === "hardBW")  [r, g, b] = nearestColor(r, g, b, hardBW);
+      if (paletteMode === "softBW")  [r, g, b] = nearestColor(r, g, b, softBW);
+      if (paletteMode === "filmBW")  [r, g, b] = nearestColor(r, g, b, filmBW);
+      if (paletteMode === "silverBW")[r, g, b] = nearestColor(r, g, b, silverBW);
+      if (paletteMode === "sepia")   [r, g, b] = nearestColor(r, g, b, sepia);
+      if (paletteMode === "grainBW") [r, g, b] = nearestColor(r, g, b, grainBW);
 
-      // 揺らぎ（軽量）
-      const jitter = cell * 0.1;
+      // 高感度フィルム風：明るさノイズを追加
+      if (paletteMode === "grainBW") {
+        const noise = (Math.random() - 0.5) * 40; // ±20 くらい
+        r = Math.max(0, Math.min(255, r + noise));
+        g = Math.max(0, Math.min(255, g + noise));
+        b = Math.max(0, Math.min(255, b + noise));
+      }
+
+      // 揺らぎ（粒子の揺れ）
+      let jitter = cell * 0.1;
+      if (paletteMode === "grainBW") {
+        jitter = cell * 0.18; // 粒子感を強める
+      }
       const jx = (Math.random() - 0.5) * jitter;
       const jy = (Math.random() - 0.5) * jitter;
 
