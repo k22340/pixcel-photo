@@ -3,50 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <title>Camera Test</title>
+  <style>
+    body { margin: 0; background: #000; }
+    video { width: 100vw; height: 100vh; object-fit: cover; }
+  </style>
 </head>
 <body>
+
+<video id="cam" autoplay playsinline></video>
+
 <script>
-let capture;
+async function startCam() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        facingMode: "environment"
+      },
+      audio: false
+    });
 
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-
-  // ▼ Redmi Note で最も安定するカメラ設定
-  capture = createCapture({
-    audio: false,
-    video: {
-      width: 640,
-      height: 480
-    }
-  });
-
-  capture.elt.setAttribute("playsinline", "");
-  capture.hide();
-}
-
-function draw() {
-  background(0);
-
-  const grid = 24;
-  const cellW = width / grid;
-  const cellH = height / grid;
-
-  capture.size(grid, grid);
-  capture.loadPixels();
-
-  for (let y = 0; y < grid; y++) {
-    for (let x = 0; x < grid; x++) {
-      const i = (y * grid + x) * 4;
-      fill(
-        capture.pixels[i],
-        capture.pixels[i+1],
-        capture.pixels[i+2]
-      );
-      rect(x * cellW, y * cellH, cellW, cellH);
-    }
+    document.getElementById("cam").srcObject = stream;
+  } catch (e) {
+    console.error("Camera error:", e);
   }
 }
+
+startCam();
 </script>
+
 </body>
 </html>
