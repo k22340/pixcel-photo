@@ -29,28 +29,21 @@
 </head>
 <body>
 
-<!-- カメラ映像（非表示） -->
 <video id="cam" autoplay playsinline style="display:none;"></video>
-
-<!-- 表示用キャンバス -->
 <canvas id="view"></canvas>
-
-<!-- 撮影ボタン -->
 <div id="captureBtn">📸</div>
 
 <script>
-const grid = 32; // ★ 32×32 ピクセル
+const grid = 32;
 const video = document.getElementById("cam");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
 
-// 32×32 に縮小するためのオフスクリーンキャンバス
 const small = document.createElement("canvas");
 small.width = grid;
 small.height = grid;
 const sctx = small.getContext("2d");
 
-// ▼ カメラ起動（Redmi Note 11 Pro 5G で確実に動く設定）
 async function startCam() {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
@@ -60,30 +53,29 @@ async function startCam() {
     },
     audio: false
   });
-
   video.srcObject = stream;
 }
 
-// ▼ 画面サイズに合わせてキャンバスを調整
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
 
-// ▼ メイン描画ループ
 function draw() {
   requestAnimationFrame(draw);
 
   if (video.readyState < 2) return;
 
-  // ① カメラ映像を 32×32 に縮小
+  // 32×32 に縮小
   sctx.drawImage(video, 0, 0, grid, grid);
-
-  // ② 32×32 のピクセルを画面いっぱいに拡大描画
-  const cellW = canvas.width / grid;
-  const cellH = canvas.height / grid;
-
   const img = sctx.getImageData(0, 0, grid, grid).data;
+
+  // ★ 正方形ピクセルのためのセルサイズ
+  const cell = Math.min(canvas.width / grid, canvas.height / grid);
+
+  // ★ 中央に配置するためのオフセット
+  const offsetX = (canvas.width - cell * grid) / 2;
+  const offsetY = (canvas.height - cell * grid) / 2;
 
   let i = 0;
   for (let y = 0; y < grid; y++) {
@@ -91,15 +83,20 @@ function draw() {
       const r = img[i++];
       const g = img[i++];
       const b = img[i++];
-      i++; // alpha
+      i++;
 
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+      ctx.fillRect(
+        offsetX + x * cell,
+        offsetY + y * cell,
+        cell,
+        cell
+      );
     }
   }
 }
 
-// ▼ 撮影ボタン（PNG 保存）
+// 撮影ボタン
 document.getElementById("captureBtn").onclick = () => {
   const link = document.createElement("a");
   link.download = "pixcel_photo.png";
