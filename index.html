@@ -60,7 +60,6 @@ async function startCam() {
 
   video.srcObject = stream;
 
-  // カメラの実際の解像度を取得
   video.onloadedmetadata = () => {
     videoW = video.videoWidth;
     videoH = video.videoHeight;
@@ -79,16 +78,14 @@ function draw() {
 
   // ★ カメラ映像のアスペクト比を保持して 32×32 に縮小
   const camRatio = videoW / videoH;
-  const gridRatio = 1; // 32×32 は正方形
+  const gridRatio = 1;
 
   let drawW, drawH;
 
   if (camRatio > gridRatio) {
-    // カメラが横長 → 横を合わせる
     drawW = grid;
     drawH = grid / camRatio;
   } else {
-    // カメラが縦長 → 縦を合わせる
     drawH = grid;
     drawW = grid * camRatio;
   }
@@ -96,7 +93,6 @@ function draw() {
   const offsetX = (grid - drawW) / 2;
   const offsetY = (grid - drawH) / 2;
 
-  // 32×32 の中にアスペクト比を保って描画
   sctx.clearRect(0, 0, grid, grid);
   sctx.drawImage(video, offsetX, offsetY, drawW, drawH);
 
@@ -108,23 +104,67 @@ function draw() {
   const py = (canvas.height - cell * grid) / 2;
 
   let i = 0;
+
   for (let y = 0; y < grid; y++) {
     for (let x = 0; x < grid; x++) {
-      const r = img[i++];
-      const g = img[i++];
-      const b = img[i++];
+
+      // 元の色
+      let r = img[i++];
+      let g = img[i++];
+      let b = img[i++];
       i++;
 
+      // ★ 周囲の色と少し混ぜる（にじみ）
+      const mix = 0.25;
+      const neighbors = [];
+
+      if (x > 0) neighbors.push((y * grid + (x - 1)) * 4);
+      if (x < grid - 1) neighbors.push((y * grid + (x + 1)) * 4);
+      if (y > 0) neighbors.push(((y - 1) * grid + x) * 4);
+      if (y < grid - 1) neighbors.push(((y + 1) * grid + x) * 4);
+
+      let nr = 0, ng = 0, nb = 0;
+      neighbors.forEach(idx => {
+        nr += img[idx];
+        ng += img[idx + 1];
+        nb += img[idx + 2];
+      });
+
+      nr /= neighbors.length;
+      ng /= neighbors.length;
+      nb /= neighbors.length;
+
+      r = r * (1 - mix) + nr * mix;
+      g = g * (1 - mix) + ng * mix;
+      b = b * (1 - mix) + nb * mix;
+
+      // ★ ピクセル位置の揺らぎ
+      const jitter = cell * 0.15;
+      const jx = (Math.random() - 0.5) * jitter;
+      const jy = (Math.random() - 0.5) * jitter;
+
+      // ★ 角丸ピクセル
+      const xPos = px + x * cell + jx;
+      const yPos = py + y * cell + jy;
+
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(px + x * cell, py + y * cell, cell, cell);
+
+      ctx.beginPath();
+      ctx.roundRect(xPos, yPos, cell, cell, cell * 0.3);
+      ctx.fill();
     }
   }
 }
 
-// 撮影ボタン
+// ★ 撮影ボタン（年月日時分秒つきファイル名）
 document.getElementById("captureBtn").onclick = () => {
+  const now = new Date();
+  const fileName =
+    `pixcel_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}_` +
+    `${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.png`;
+
   const link = document.createElement("a");
-  link.download = "pixcel_photo.png";
+  link.download = fileName;
   link.href = canvas.toDataURL("image/png");
   link.click();
 };
