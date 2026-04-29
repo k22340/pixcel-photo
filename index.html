@@ -3,29 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixLens 24x24 Camera</title>
+  <title>Pixcel Photo</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; }
     canvas { display: block; }
+
+    #captureBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.85);
+      border: 3px solid #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      cursor: pointer;
+      user-select: none;
+      z-index: 9999;
+    }
   </style>
 </head>
 <body>
 
+<!-- カメラ映像（非表示） -->
 <video id="cam" autoplay playsinline style="display:none;"></video>
+
+<!-- 表示用キャンバス -->
 <canvas id="view"></canvas>
 
+<!-- 撮影ボタン -->
+<div id="captureBtn">📸</div>
+
 <script>
-const grid = 24;
+const grid = 32; // ★ 32×32 ピクセル
 const video = document.getElementById("cam");
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
 
-// 24×24 の縮小用オフスクリーンキャンバス
+// 32×32 に縮小するためのオフスクリーンキャンバス
 const small = document.createElement("canvas");
 small.width = grid;
 small.height = grid;
 const sctx = small.getContext("2d");
 
+// ▼ カメラ起動（Redmi Note 11 Pro 5G で確実に動く設定）
 async function startCam() {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
@@ -35,23 +60,26 @@ async function startCam() {
     },
     audio: false
   });
+
   video.srcObject = stream;
 }
 
+// ▼ 画面サイズに合わせてキャンバスを調整
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
 
+// ▼ メイン描画ループ
 function draw() {
   requestAnimationFrame(draw);
 
   if (video.readyState < 2) return;
 
-  // ① カメラ映像を 24×24 に縮小
+  // ① カメラ映像を 32×32 に縮小
   sctx.drawImage(video, 0, 0, grid, grid);
 
-  // ② 24×24 のピクセルを画面いっぱいに拡大描画
+  // ② 32×32 のピクセルを画面いっぱいに拡大描画
   const cellW = canvas.width / grid;
   const cellH = canvas.height / grid;
 
@@ -70,6 +98,14 @@ function draw() {
     }
   }
 }
+
+// ▼ 撮影ボタン（PNG 保存）
+document.getElementById("captureBtn").onclick = () => {
+  const link = document.createElement("a");
+  link.download = "pixcel_photo.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
 
 window.onresize = resize;
 
