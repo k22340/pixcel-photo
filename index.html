@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixLens風ピクセルカメラ</title>
+  <title>PixLens風ピクセルカメラ（軽量版）</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
 
   <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
     #captureBtn {
       position: fixed;
       bottom: 20px;
@@ -14,7 +19,7 @@
       width: 70px;
       height: 70px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.85);
       border: 3px solid #fff;
       display: flex;
       justify-content: center;
@@ -31,7 +36,6 @@
 <div id="captureBtn">📸</div>
 
 <script>
-
 let capture;
 
 // 通常モードのピクセルサイズ
@@ -46,13 +50,14 @@ let jitter = 0.15;
 // 角丸の強さ
 let roundness = 0.35;
 
-// ハロー（光の滲み）
-let haloSize = 1.8;
-let haloAlpha = 40;
+// ハロー（光の滲み）の強さ（簡易版）
+let haloScale = 1.4;   // ピクセルの何倍の大きさで滲ませるか
+let haloAlpha = 30;    // 透明度（0〜255）
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
+  // exact を外して互換性優先
   capture = createCapture({
     video: { facingMode: "environment" }
   });
@@ -76,57 +81,55 @@ function draw() {
   }
 }
 
-//
-// ▼ ハロー（光の滲み）
-//
-function drawHalo(x, y, w, h, r, col) {
-  push();
-  blendMode(ADD);
-  fill(col[0], col[1], col[2], haloAlpha);
+// ▼ ハロー＋ピクセル本体を1回の関数で描く（軽量化）
+function drawPixelWithHalo(x, y, w, h, r, col) {
+  // ハロー（白っぽい光の膜）
+  fill(255, 255, 255, haloAlpha);
+  const hw = w * haloScale;
+  const hh = h * haloScale;
+  rect(
+    x - (hw - w) / 2,
+    y - (hh - h) / 2,
+    hw,
+    hh,
+    r * 1.6
+  );
 
-  let hw = w * haloSize;
-  let hh = h * haloSize;
-
-  rect(x - (hw - w) / 2, y - (hh - h) / 2, hw, hh, r * 1.5);
-  pop();
+  // ピクセル本体
+  fill(col[0], col[1], col[2]);
+  rect(x, y, w, h, r);
 }
 
-//
-// ▼ 通常モード
-//
+// ▼ 通常モード（pixelSize 可変）
 function drawNormalMode() {
-  capture.size(width / pixelSize, height / pixelSize);
+  const wCount = floor(width / pixelSize);
+  const hCount = floor(height / pixelSize);
+
+  capture.size(wCount, hCount);
   capture.loadPixels();
 
-  let w = capture.width;
-  let h = capture.height;
+  const w = capture.width;
+  const h = capture.height;
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-
-      let i = (y * w + x) * 4;
-      let col = [
+      const i = (y * w + x) * 4;
+      const col = [
         capture.pixels[i],
         capture.pixels[i + 1],
         capture.pixels[i + 2]
       ];
 
-      let dx = x * pixelSize + random(-jitter, jitter) * pixelSize;
-      let dy = y * pixelSize + random(-jitter, jitter) * pixelSize;
+      let dx = x * pixelSize + (random(-jitter, jitter) * pixelSize);
+      let dy = y * pixelSize + (random(-jitter, jitter) * pixelSize);
+      const radius = pixelSize * roundness;
 
-      let radius = pixelSize * roundness;
-
-      drawHalo(dx, dy, pixelSize, pixelSize, radius, col);
-
-      fill(col[0], col[1], col[2]);
-      rect(dx, dy, pixelSize, pixelSize, radius);
+      drawPixelWithHalo(dx, dy, pixelSize, pixelSize, radius, col);
     }
   }
 }
 
-//
 // ▼ PixLens＋モード（24×24固定）
-//
 function drawPixlensMode() {
   const grid = 24;
   const cellW = width / grid;
@@ -137,39 +140,30 @@ function drawPixlensMode() {
 
   for (let y = 0; y < grid; y++) {
     for (let x = 0; x < grid; x++) {
-
-      let i = (y * grid + x) * 4;
-      let col = [
+      const i = (y * grid + x) * 4;
+      const col = [
         capture.pixels[i],
         capture.pixels[i + 1],
         capture.pixels[i + 2]
       ];
 
-      let dx = x * cellW + random(-jitter, jitter) * cellW;
-      let dy = y * cellH + random(-jitter, jitter) * cellH;
+      let dx = x * cellW + (random(-jitter, jitter) * cellW);
+      let dy = y * cellH + (random(-jitter, jitter) * cellH);
+      const radius = min(cellW, cellH) * roundness;
 
-      let radius = min(cellW, cellH) * roundness;
-
-      drawHalo(dx, dy, cellW, cellH, radius, col);
-
-      fill(col[0], col[1], col[2]);
-      rect(dx, dy, cellW, cellH, radius);
+      drawPixelWithHalo(dx, dy, cellW, cellH, radius, col);
     }
   }
 }
 
-//
 // ▼ スワイプで通常モードの解像度変更
-//
 function touchMoved() {
   if (!pixlensMode) {
-    pixelSize = constrain(pixelSize + (pmouseY - mouseY) * 0.1, 4, 40);
+    pixelSize = constrain(pixelSize + (pmouseY - mouseY) * 0.1, 6, 40);
   }
 }
 
-//
 // ▼ タップでモード切り替え
-//
 function touchStarted() {
   pixlensMode = !pixlensMode;
 }
@@ -177,7 +171,6 @@ function touchStarted() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
-
 </script>
 </body>
 </html>
