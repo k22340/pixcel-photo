@@ -9,27 +9,31 @@
     canvas { display: block; }
 
     .btn {
+      display: inline-block;
       padding: 8px 14px;
       background: rgba(255,255,255,0.85);
       border-radius: 8px;
       font-size: 14px;
       cursor: pointer;
       user-select: none;
+      margin-right: 8px;
+      white-space: nowrap;
     }
 
+    /* 横スクロール UI */
     #modeBtns, #colorBtns {
       position: fixed;
+      left: 10px;
+      right: 10px;
       top: 20px;
-      right: 20px;
-      display: flex;
-      gap: 8px;
+      overflow-x: auto;
+      white-space: nowrap;
       z-index: 9999;
-      flex-wrap: wrap;
-      width: 260px;
+      padding-bottom: 6px;
     }
 
     #colorBtns {
-      top: 80px;
+      top: 70px;
     }
 
     #captureBtn {
@@ -134,7 +138,6 @@ function resize() {
    パレット定義
 --------------------------*/
 
-// PICO‑8（16色）
 const pico8 = [
   [0,0,0],[29,43,83],[126,37,83],[0,135,81],
   [171,82,54],[95,87,79],[194,195,199],[255,241,232],
@@ -142,15 +145,10 @@ const pico8 = [
   [41,173,255],[131,118,156],[255,119,168],[255,204,170]
 ];
 
-// Game Boy（4色）
 const gb = [
-  [15,56,15],
-  [48,98,48],
-  [139,172,15],
-  [155,188,15]
+  [15,56,15],[48,98,48],[139,172,15],[155,188,15]
 ];
 
-// NES（54色）
 const nes = [
   [124,124,124],[0,0,252],[0,0,188],[68,40,188],[148,0,132],[168,0,32],
   [168,16,0],[136,20,0],[80,48,0],[0,120,0],[0,104,0],[0,88,0],
@@ -164,7 +162,6 @@ const nes = [
   [248,216,120],[216,248,120],[184,248,184],[184,248,216],[0,252,252]
 ];
 
-// C64（16色）
 const c64 = [
   [0,0,0],[255,255,255],[136,0,0],[170,255,238],
   [204,68,204],[0,204,85],[0,0,170],[238,238,119],
@@ -172,7 +169,6 @@ const c64 = [
   [119,119,119],[170,255,102],[0,136,255],[187,187,187]
 ];
 
-// MSX（15色）
 const msx = [
   [0,0,0],[0,0,0],[33,200,66],[94,220,120],[84,85,237],
   [125,118,252],[212,82,77],[66,235,245],[252,85,84],
@@ -180,46 +176,28 @@ const msx = [
   [201,91,186],[204,204,204]
 ];
 
-// コントラスト強め
 const hardBW = [
-  [0, 0, 0],
-  [128, 128, 128],
-  [255, 255, 255]
+  [0,0,0],[128,128,128],[255,255,255]
 ];
 
-// 柔らかめ
 const softBW = [
-  [40, 40, 40],
-  [120, 120, 120],
-  [200, 200, 200]
+  [40,40,40],[120,120,120],[200,200,200]
 ];
 
-// フィルム写真風（少し黄味）
 const filmBW = [
-  [20, 18, 12],
-  [110, 100, 80],
-  [220, 210, 180]
+  [20,18,12],[110,100,80],[220,210,180]
 ];
 
-// 銀塩写真風（青みのある白黒）
 const silverBW = [
-  [10, 15, 25],
-  [90, 105, 130],
-  [200, 210, 230]
+  [10,15,25],[90,105,130],[200,210,230]
 ];
 
-// セピア（茶色系の古写真）
 const sepia = [
-  [30, 20, 10],
-  [120, 90, 60],
-  [210, 180, 140]
+  [30,20,10],[120,90,60],[210,180,140]
 ];
 
-// 高感度フィルム風（粒子強調用のベース）
 const grainBW = [
-  [0, 0, 0],
-  [120, 120, 120],
-  [240, 240, 240]
+  [0,0,0],[120,120,120],[240,240,240]
 ];
 
 function nearestColor(r, g, b, palette) {
@@ -277,7 +255,6 @@ function draw() {
       let b = img[i++];
       i++;
 
-      // 色数制限
       if (paletteMode === "pico8")   [r, g, b] = nearestColor(r, g, b, pico8);
       if (paletteMode === "gb")      [r, g, b] = nearestColor(r, g, b, gb);
       if (paletteMode === "nes")     [r, g, b] = nearestColor(r, g, b, nes);
@@ -290,19 +267,16 @@ function draw() {
       if (paletteMode === "sepia")   [r, g, b] = nearestColor(r, g, b, sepia);
       if (paletteMode === "grainBW") [r, g, b] = nearestColor(r, g, b, grainBW);
 
-      // 高感度フィルム風：明るさノイズを追加
       if (paletteMode === "grainBW") {
-        const noise = (Math.random() - 0.5) * 40; // ±20 くらい
+        const noise = (Math.random() - 0.5) * 40;
         r = Math.max(0, Math.min(255, r + noise));
         g = Math.max(0, Math.min(255, g + noise));
         b = Math.max(0, Math.min(255, b + noise));
       }
 
-      // 揺らぎ（粒子の揺れ）
       let jitter = cell * 0.1;
-      if (paletteMode === "grainBW") {
-        jitter = cell * 0.18; // 粒子感を強める
-      }
+      if (paletteMode === "grainBW") jitter = cell * 0.18;
+
       const jx = (Math.random() - 0.5) * jitter;
       const jy = (Math.random() - 0.5) * jitter;
 
@@ -311,13 +285,12 @@ function draw() {
 
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.beginPath();
-      ctx.roundRect(xPos, yPos, cell, cell, cell * 0.3);
+      ctx.roundRect(xPos, yPos, cell, cell, cell * 0.15);
       ctx.fill();
     }
   }
 }
 
-// 撮影ボタン（年月日時分秒つき）
 document.getElementById("captureBtn").onclick = () => {
   const now = new Date();
   const fileName =
