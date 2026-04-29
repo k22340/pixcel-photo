@@ -8,6 +8,30 @@
     body { margin: 0; background: #000; overflow: hidden; }
     canvas { display: block; }
 
+    .btn {
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #modeBtns, #colorBtns {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 9999;
+      flex-wrap: wrap;
+      width: 200px;
+    }
+
+    #colorBtns {
+      top: 80px;
+    }
+
     #captureBtn {
       position: fixed;
       bottom: 20px;
@@ -25,28 +49,6 @@
       user-select: none;
       z-index: 9999;
     }
-
-    #modeBtns, #colorBtns {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      gap: 10px;
-      z-index: 9999;
-    }
-
-    #colorBtns {
-      top: 70px;
-    }
-
-    .modeBtn {
-      padding: 8px 14px;
-      background: rgba(255,255,255,0.85);
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      user-select: none;
-    }
   </style>
 </head>
 <body>
@@ -56,16 +58,19 @@
 
 <!-- ピクセル数切り替え -->
 <div id="modeBtns">
-  <div class="modeBtn" onclick="setGrid(32)">32</div>
-  <div class="modeBtn" onclick="setGrid(48)">48</div>
-  <div class="modeBtn" onclick="setGrid(64)">64</div>
+  <div class="btn" onclick="setGrid(32)">32</div>
+  <div class="btn" onclick="setGrid(48)">48</div>
+  <div class="btn" onclick="setGrid(64)">64</div>
 </div>
 
 <!-- 色数制限切り替え -->
 <div id="colorBtns">
-  <div class="modeBtn" onclick="setPalette('normal')">Normal</div>
-  <div class="modeBtn" onclick="setPalette('pico8')">PICO‑8</div>
-  <div class="modeBtn" onclick="setPalette('gb')">GameBoy</div>
+  <div class="btn" onclick="setPalette('normal')">Normal</div>
+  <div class="btn" onclick="setPalette('pico8')">PICO‑8</div>
+  <div class="btn" onclick="setPalette('gb')">GB</div>
+  <div class="btn" onclick="setPalette('nes')">NES</div>
+  <div class="btn" onclick="setPalette('c64')">C64</div>
+  <div class="btn" onclick="setPalette('msx')">MSX</div>
 </div>
 
 <!-- 撮影ボタン -->
@@ -119,7 +124,11 @@ function resize() {
   canvas.height = window.innerHeight;
 }
 
-// ★ PICO‑8 パレット
+/* -------------------------
+   パレット定義
+--------------------------*/
+
+// PICO‑8（16色）
 const pico8 = [
   [0,0,0],[29,43,83],[126,37,83],[0,135,81],
   [171,82,54],[95,87,79],[194,195,199],[255,241,232],
@@ -127,12 +136,42 @@ const pico8 = [
   [41,173,255],[131,118,156],[255,119,168],[255,204,170]
 ];
 
-// ★ Game Boy パレット（4色）
+// Game Boy（4色）
 const gb = [
   [15,56,15],
   [48,98,48],
   [139,172,15],
   [155,188,15]
+];
+
+// NES（54色）
+const nes = [
+  [124,124,124],[0,0,252],[0,0,188],[68,40,188],[148,0,132],[168,0,32],
+  [168,16,0],[136,20,0],[80,48,0],[0,120,0],[0,104,0],[0,88,0],
+  [0,64,88],[0,0,0],[188,188,188],[0,120,248],[0,88,248],[104,68,252],
+  [216,0,204],[228,0,88],[248,56,0],[228,92,16],[172,124,0],[0,184,0],
+  [0,168,0],[0,168,68],[0,136,136],[0,0,0],[248,248,248],[60,188,252],
+  [104,136,252],[152,120,248],[248,120,248],[248,88,152],[248,120,88],
+  [252,160,68],[248,184,0],[184,248,24],[88,216,84],[88,248,152],
+  [0,232,216],[120,120,120],[252,252,252],[164,228,252],[184,184,248],
+  [216,184,248],[248,184,248],[248,164,192],[240,208,176],[252,224,168],
+  [248,216,120],[216,248,120],[184,248,184],[184,248,216],[0,252,252]
+];
+
+// C64（16色）
+const c64 = [
+  [0,0,0],[255,255,255],[136,0,0],[170,255,238],
+  [204,68,204],[0,204,85],[0,0,170],[238,238,119],
+  [221,136,85],[102,68,0],[255,119,119],[51,51,51],
+  [119,119,119],[170,255,102],[0,136,255],[187,187,187]
+];
+
+// MSX（15色）
+const msx = [
+  [0,0,0],[0,0,0],[33,200,66],[94,220,120],[84,85,237],
+  [125,118,252],[212,82,77],[66,235,245],[252,85,84],
+  [255,121,120],[212,193,84],[230,206,128],[33,176,59],
+  [201,91,186],[204,204,204]
 ];
 
 function nearestColor(r, g, b, palette) {
@@ -190,15 +229,14 @@ function draw() {
       let b = img[i++];
       i++;
 
-      // ★ 色数制限
-      if (paletteMode === "pico8") {
-        [r, g, b] = nearestColor(r, g, b, pico8);
-      }
-      if (paletteMode === "gb") {
-        [r, g, b] = nearestColor(r, g, b, gb);
-      }
+      // 色数制限
+      if (paletteMode === "pico8") [r, g, b] = nearestColor(r, g, b, pico8);
+      if (paletteMode === "gb")    [r, g, b] = nearestColor(r, g, b, gb);
+      if (paletteMode === "nes")   [r, g, b] = nearestColor(r, g, b, nes);
+      if (paletteMode === "c64")   [r, g, b] = nearestColor(r, g, b, c64);
+      if (paletteMode === "msx")   [r, g, b] = nearestColor(r, g, b, msx);
 
-      // ★ 揺らぎ（軽量）
+      // 揺らぎ（軽量）
       const jitter = cell * 0.1;
       const jx = (Math.random() - 0.5) * jitter;
       const jy = (Math.random() - 0.5) * jitter;
